@@ -1,5 +1,8 @@
 project(test_performance)
 
+include_directories(/Users/quarnster/code/asaot ../../../../angelscript/source)
+link_directories(/Users/quarnster/code/asaot/build)
+
 add_executable(
         test_performance
         ../../source/main.cpp
@@ -19,6 +22,22 @@ add_executable(
         ../../source/test_thisprop.cpp
         ../../source/test_vector3.cpp
         ../../source/utils.cpp
+
+        ../../bin/TestAssign_generated.cpp
+        ../../bin/TestBasic2_generated.cpp
+        ../../bin/TestBasic_generated.cpp
+        ../../bin/TestCall2_generated.cpp
+        ../../bin/TestCall_generated.cpp
+        ../../bin/TestFib_generated.cpp
+        ../../bin/TestInt_generated.cpp
+        ../../bin/TestIntf_generated.cpp
+        ../../bin/TestMthd_generated.cpp
+        ../../bin/TestString2_generated.cpp
+        ../../bin/TestStringPooled_generated.cpp
+        ../../bin/TestString_generated.cpp
+        ../../bin/TestThisProp_generated.cpp
+        ../../bin/TestVector3_generated.cpp
+
         ../../../../add_on/debugger/debugger.cpp
         ../../../../add_on/scriptany/scriptany.cpp
         ../../../../add_on/scriptarray/scriptarray.cpp
@@ -33,6 +52,6 @@ add_executable(
         ../../../../add_on/scriptstdstring/scriptstdstring_utils.cpp
         ../../../../add_on/serializer/serializer.cpp
         )
-target_link_libraries(test_performance Angelscript)
+target_link_libraries(test_performance Angelscript asaot)
 set_target_properties(test_performance PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/../../bin)
 
