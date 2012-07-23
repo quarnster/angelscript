@@ -18,7 +18,7 @@ static const char *script =
 "}                                                                \n";
 
 
-                                         
+
 void Test(double *testTime)
 {
  	asIScriptEngine *engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
@@ -30,8 +30,8 @@ void Test(double *testTime)
 	mod->Build();
 
 	asIScriptContext *ctx = engine->CreateContext();
-	int funcId_A = mod->GetFunctionIdByDecl("void TestCall2_A()");
-	int funcId_B = mod->GetFunctionIdByDecl("void TestCall2_B()");
+	asIScriptFunction *funcId_A = mod->GetFunctionByDecl("void TestCall2_A()");
+	asIScriptFunction *funcId_B = mod->GetFunctionByDecl("void TestCall2_B()");
 
 	double time = GetSystemTimer();
 	int r;

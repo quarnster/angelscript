@@ -18,7 +18,7 @@ static const char *script =
 "class Test                             \n"
 "{                                      \n"
 "  float a;                             \n"
-"  float b;                             \n" 
+"  float b;                             \n"
 "  float c;                             \n"
 "  int i;                               \n"
 "  void Run()                           \n"
@@ -48,7 +48,7 @@ void Test(double *testTime)
 	mod->Build();
 
 	asIScriptContext *ctx = engine->CreateContext();
-	ctx->Prepare(mod->GetFunctionIdByDecl("void TestThisProp()"));
+	ctx->Prepare(mod->GetFunctionByDecl("void TestThisProp()"));
 
 	double time = GetSystemTimer();
 

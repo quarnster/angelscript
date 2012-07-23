@@ -70,7 +70,7 @@ int Average(int a, int b)
 	return (a+b)/2;
 }
 
-                                         
+
 void Test(double *testTime)
 {
  	asIScriptEngine *engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
@@ -85,7 +85,7 @@ void Test(double *testTime)
 	mod->Build();
 
 	asIScriptContext *ctx = engine->CreateContext();
-	ctx->Prepare(mod->GetFunctionIdByDecl("int TestInt()"));
+	ctx->Prepare(mod->GetFunctionByDecl("int TestInt()"));
 
 	double time = GetSystemTimer();
 

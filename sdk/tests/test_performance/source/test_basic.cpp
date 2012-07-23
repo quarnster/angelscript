@@ -82,7 +82,7 @@ void Test(double *testTime)
 	mod->Build();
 
 	asIScriptContext *ctx = engine->CreateContext();
-	ctx->Prepare(mod->GetFunctionIdByDecl("int TestBasic()"));
+	ctx->Prepare(mod->GetFunctionByDecl("int TestBasic()"));
 
 	double time = GetSystemTimer();
 
@@ -144,7 +144,7 @@ function recursion( rec )
         else if rec==4 then func4()
                 else if rec==3 then func3()
                         else if rec==2 then func2()
-                                else n = n * 1.5 
+                                else n = n * 1.5
                                 end
                         end
                 end
@@ -155,7 +155,7 @@ n = 0
 i = 0
 
 for i = 0, 249999, 0.25 do
-    zfx.average( i, i + 1 ) 
+    zfx.average( i, i + 1 )
     recursion( 5 )
     if n > 100 then n = 0 end
 end

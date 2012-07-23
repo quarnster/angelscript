@@ -30,7 +30,7 @@ static const char *script =
 "    }                                                           \n"
 "}                                                               \n";
 
-                                         
+
 void Test(double *testTime)
 {
  	asIScriptEngine *engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
@@ -44,7 +44,7 @@ void Test(double *testTime)
 	mod->Build();
 
 	asIScriptContext *ctx = engine->CreateContext();
-	ctx->Prepare(mod->GetFunctionIdByDecl("void TestString2()"));
+	ctx->Prepare(mod->GetFunctionByDecl("void TestString2()"));
 
 	double time = GetSystemTimer();
 

@@ -191,7 +191,7 @@ static const char *script =
 "    }                                                            \n"
 "}                                                                \n";
 
-                                         
+
 void Test(double *testTime)
 {
  	asIScriptEngine *engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
@@ -206,7 +206,7 @@ void Test(double *testTime)
 	if( r >= 0 )
 	{
 		asIScriptContext *ctx = engine->CreateContext();
-		ctx->Prepare(mod->GetFunctionIdByDecl("void TestStringP()"));
+		ctx->Prepare(mod->GetFunctionByDecl("void TestStringP()"));
 
 		double time = GetSystemTimer();
 
