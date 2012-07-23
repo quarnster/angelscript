@@ -32,14 +32,14 @@ int CGameMgr::StartGame()
 
 	// Create some stones
 	for( unsigned int n = 0; n < 10; n++ )
-		SpawnObject("stone", '0', 10*rand()/RAND_MAX, 10*rand()/RAND_MAX);
+		SpawnObject("stone", '0', 10*(rand()/(float)RAND_MAX), 10*(rand()/(float)RAND_MAX));
 
 	// Create some zombies
 	for( unsigned int n = 0; n < 3; n++ )
-		SpawnObject("zombie", 'z', 10*rand()/RAND_MAX, 10*rand()/RAND_MAX);
+		SpawnObject("zombie", 'z', 10*(rand()/(float)RAND_MAX), 10*(rand()/(float)RAND_MAX));
 
 	// Create the player
-	CGameObj *obj = SpawnObject("player", 'p', 10*rand()/RAND_MAX, 10*rand()/RAND_MAX);
+	CGameObj *obj = SpawnObject("player", 'p', 10*rand()/(float)RAND_MAX, 10*rand()/(float)RAND_MAX);
 	if( obj )
 		obj->name = "player";
 
@@ -81,10 +81,10 @@ void CGameMgr::Run()
 		{
 			if( gameObjects[n]->isDead )
 			{
-				// We won't actually delete the memory here, as we do not know 
+				// We won't actually delete the memory here, as we do not know
 				// exactly who might still be referencing the object, but we
 				// make sure to destroy the internals in order to avoid
-				// circular references. 
+				// circular references.
 				gameObjects[n]->DestroyAndRelease();
 				gameObjects.erase(gameObjects.begin()+n);
 				n--;
@@ -101,7 +101,7 @@ void CGameMgr::EndGame(bool win)
 		cout << "Congratulations, you've defeated the zombies!" << endl;
 	else
 		cout << "Too bad, the zombies ate your brain!" << endl;
-	
+
 	// Get something to let the player see the message before exiting
 	char buf[2];
 	cin.getline(buf, 1);
@@ -119,7 +119,11 @@ void CGameMgr::Render()
 		buf[gameObjects[n]->y][gameObjects[n]->x] = gameObjects[n]->displayCharacter;
 
 	// Clear the screen
+#ifdef _WIN32
 	system("cls");
+#else
+	system("clear");
+#endif
 
 	// Print some useful information and start the input loop
 	cout << "Sample game using AngelScript " << asGetLibraryVersion() << "." << endl;

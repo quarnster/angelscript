@@ -54,7 +54,7 @@ int CScriptMgr::Init()
 
 	// The script can kill the owning object
 	r = engine->RegisterObjectMethod("CGameObj", "void Kill()", asMETHOD(CGameObj, Kill), asCALL_THISCALL); assert( r >= 0 );
-	
+
 	// The script can send a message to the other object through this method
 	// Observe the autohandle @+ to tell AngelScript to automatically release the handle after the call
 	// The generic handle type is used to allow the script to pass any object to
@@ -83,9 +83,9 @@ int CScriptMgr::Init()
 
 	// The script can call this method to end the game
 	r = engine->RegisterObjectMethod("CGameMgr", "void EndGame(bool win)", asMETHOD(CGameMgr, EndGame), asCALL_THISCALL); assert( r >= 0 );
-	
+
 	// Register a method that will allow the script to find an object by its name.
-	// This returns the object as const handle, as the script should only be 
+	// This returns the object as const handle, as the script should only be
 	// allow to directly modify its owner object.
 	// Observe the @+ that tells AngelScript to automatically increase the refcount
 	r = engine->RegisterObjectMethod("CGameMgr", "const CGameObj @+ FindObjByName(const string &in name)", asMETHOD(CGameMgr, FindGameObjByName), asCALL_THISCALL); assert( r >= 0 );
@@ -97,9 +97,9 @@ int CScriptMgr::Init()
 void CScriptMgr::MessageCallback(const asSMessageInfo &msg)
 {
 	const char *type = "ERR ";
-	if( msg.type == asMSGTYPE_WARNING ) 
+	if( msg.type == asMSGTYPE_WARNING )
 		type = "WARN";
-	else if( msg.type == asMSGTYPE_INFORMATION ) 
+	else if( msg.type == asMSGTYPE_INFORMATION )
 		type = "INFO";
 
 	cout << msg.section << " (" << msg.row << ", " << msg.col << ") : " << type << " : " << msg.message << endl;
@@ -197,7 +197,7 @@ CScriptMgr::SController *CScriptMgr::GetControllerScript(const string &script)
 		delete ctrl;
 		return 0;
 	}
-	
+
 	// Find the optional event handlers
 	ctrl->onThinkMethod     = type->GetMethodByDecl("void OnThink()");
 	ctrl->onMessageMethod   = type->GetMethodByDecl("void OnMessage(ref @msg, const CGameObj @sender)");
@@ -215,11 +215,11 @@ asIScriptObject *CScriptMgr::CreateController(const string &script, CGameObj *ga
 
 	SController *ctrl = GetControllerScript(script);
 	if( ctrl == 0 ) return 0;
-		
+
 	// Create the object using the factory function
 	asIScriptContext *ctx = PrepareContextFromPool(ctrl->factoryFunc);
 
-	// Pass the object pointer to the script function. With this call the 
+	// Pass the object pointer to the script function. With this call the
 	// context will automatically increase the reference count for the object.
 	ctx->SetArgObject(0, gameObj);
 
@@ -230,24 +230,24 @@ asIScriptObject *CScriptMgr::CreateController(const string &script, CGameObj *ga
 		// Get the newly created object
 		obj = *((asIScriptObject**)ctx->GetAddressOfReturnValue());
 
-		// Since a reference will be kept to this object 
+		// Since a reference will be kept to this object
 		// it is necessary to increase the ref count
 		obj->AddRef();
 	}
 
 	// Return the context to the pool so it can be reused
 	ReturnContextToPool(ctx);
-	
+
 	return obj;
 }
 
 void CScriptMgr::CallOnThink(asIScriptObject *object)
 {
-	// Find the cached onThink method id 
+	// Find the cached onThink method id
 	SController *ctrl = reinterpret_cast<SController*>(object->GetObjectType()->GetUserData());
 
 	// Call the method using the shared context
-	if( ctrl->onThinkMethod == 0 )
+	if( ctrl->onThinkMethod > 0 )
 	{
 		asIScriptContext *ctx = PrepareContextFromPool(ctrl->onThinkMethod);
 		ctx->SetObject(object);
@@ -284,8 +284,8 @@ int CScriptMgr::ExecuteCall(asIScriptContext *ctx)
 			cout << "Function: " << ctx->GetExceptionFunction()->GetDeclaration() << endl;
 			cout << "Line: " << ctx->GetExceptionLineNumber() << endl;
 
-			// It is possible to print more information about the location of the 
-			// exception, for example the call stack, values of variables, etc if 
+			// It is possible to print more information about the location of the
+			// exception, for example the call stack, values of variables, etc if
 			// that is of interest.
 		}
 	}
