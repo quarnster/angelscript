@@ -5,10 +5,11 @@
 
 BEGIN_AS_NAMESPACE
 
-void Construct(CScriptHandle *self) { new(self) CScriptHandle(); }
-void Construct(CScriptHandle *self, const CScriptHandle &o) { new(self) CScriptHandle(o); }
+static void Construct(CScriptHandle *self) { new(self) CScriptHandle(); }
+static void Construct(CScriptHandle *self, const CScriptHandle &o) { new(self) CScriptHandle(o); }
+// This one is not static because it needs to be friend with the CScriptHandle class
 void Construct(CScriptHandle *self, void *ref, int typeId) { new(self) CScriptHandle(ref, typeId); }
-void Destruct(CScriptHandle *self) { self->~CScriptHandle(); }
+static void Destruct(CScriptHandle *self) { self->~CScriptHandle(); }
 
 CScriptHandle::CScriptHandle()
 {
@@ -32,7 +33,7 @@ CScriptHandle::CScriptHandle(void *ref, asIObjectType *type)
 	AddRefHandle();
 }
 
-// This constructor shouldn't be called from the application
+// This constructor shouldn't be called from the application 
 // directly as it requires an active script context
 CScriptHandle::CScriptHandle(void *ref, int typeId)
 {
@@ -96,7 +97,7 @@ void CScriptHandle::Set(void *ref, asIObjectType *type)
 	AddRefHandle();
 }
 
-// This method shouldn't be called from the application
+// This method shouldn't be called from the application 
 // directly as it requires an active script context
 CScriptHandle &CScriptHandle::Assign(void *ref, int typeId)
 {
@@ -156,7 +157,7 @@ bool CScriptHandle::Equals(void *ref, int typeId) const
 		typeId &= ~asTYPEID_OBJHANDLE;
 	}
 
-	// TODO: If typeId is not the same, we should attempt to do a dynamic cast,
+	// TODO: If typeId is not the same, we should attempt to do a dynamic cast, 
 	//       which may change the pointer for application registered classes
 
 	if( ref == m_ref ) return true;
@@ -173,7 +174,7 @@ void CScriptHandle::Cast(void **outRef, int typeId)
 		*outRef = 0;
 		return;
 	}
-
+	
 	// It is expected that the outRef is always a handle
 	assert( typeId & asTYPEID_OBJHANDLE );
 
@@ -202,9 +203,9 @@ void CScriptHandle::Cast(void **outRef, int typeId)
 	}
 	else
 	{
-		// TODO: Check for the existance of a reference cast behaviour.
+		// TODO: Check for the existance of a reference cast behaviour. 
 		//       Both implicit and explicit casts may be used
-		//       Calling the reference cast behaviour may change the actual
+		//       Calling the reference cast behaviour may change the actual 
 		//       pointer so the AddRef must be called on the new pointer
 	}
 }
