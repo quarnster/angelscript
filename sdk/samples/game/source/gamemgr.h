@@ -1,6 +1,7 @@
 #ifndef GAMEMGR_H
 #define GAMEMGR_H
 
+#include <string>
 #include <vector>
 
 class CGameObj;
