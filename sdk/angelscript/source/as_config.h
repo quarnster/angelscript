@@ -60,7 +60,7 @@
 
 // AS_DEBUG
 // This flag can be defined to make the library write some extra output when
-// compiling and executing scripts. 
+// compiling and executing scripts.
 
 // AS_DEPRECATED
 // If this flag is defined then some backwards compatibility is maintained.
@@ -78,9 +78,9 @@
 // AS_DOUBLEBYTE_CHARSET
 // When this flag is defined, the parser will treat all characters in strings
 // that are greater than 127 as lead characters and automatically include the
-// next character in the script without checking its value. This should be 
-// compatible with common encoding schemes, e.g. Big5. Shift-JIS is not compatible 
-// though as it encodes some single byte characters above 127. 
+// next character in the script without checking its value. This should be
+// compatible with common encoding schemes, e.g. Big5. Shift-JIS is not compatible
+// though as it encodes some single byte characters above 127.
 //
 // If support for international text is desired, it is recommended that UTF-8
 // is used as this is supported natively by the compiler without the use for this
@@ -115,7 +115,7 @@
 //-----------------------------------------
 
 // asVSNPRINTF(a,b,c,d)
-// Some compilers use different names for this function. You must 
+// Some compilers use different names for this function. You must
 // define this macro to map to the proper function.
 
 // ASM_AT_N_T or ASM_INTEL
@@ -203,7 +203,7 @@
 // Use MSVC assembler code for the X64 AMD/Intel CPU family
 
 // AS_64BIT_PTR
-// Define this to make the engine store all pointers in 64bit words. 
+// Define this to make the engine store all pointers in 64bit words.
 
 // AS_BIG_ENDIAN
 // Define this for CPUs that use big endian memory layout, e.g. PPC
@@ -268,7 +268,7 @@
 // or in the registers as normal structures
 
 // COMPLEX_MASK
-// This constant shows what attributes determine if an object is implicitly passed 
+// This constant shows what attributes determine if an object is implicitly passed
 // by reference or not, even if the argument is declared by value
 
 // THISCALL_RETURN_SIMPLE_IN_MEMORY
@@ -316,7 +316,7 @@
 
 // SPLIT_OBJS_BY_MEMBER_TYPES
 // On some platforms objects with primitive members are split over different
-// register types when passed by value to functions. 
+// register types when passed by value to functions.
 
 
 
@@ -388,7 +388,7 @@
 	#define THISCALL_RETURN_SIMPLE_IN_MEMORY
 	#define THISCALL_PASS_OBJECT_POINTER_IN_ECX
 
-	// There doesn't seem to be a standard define to identify Marmalade, so we'll 
+	// There doesn't seem to be a standard define to identify Marmalade, so we'll
 	// look for one of these defines that have to be given by the project settings
 	// http://www.madewithmarmalade.com/
 	#if defined(AS_MARMALADE) || defined (MARMALADE)
@@ -486,7 +486,7 @@
 	#define UNREACHABLE_RETURN
 #endif
 
-// SN Systems ProDG 
+// SN Systems ProDG
 #if defined(__SNC__) || defined(SNSYS)
 	#define GNU_STYLE_VIRTUAL_METHOD
 	#define MULTI_BASE_OFFSET(x) (*((asDWORD*)(&x)+1))
@@ -626,7 +626,7 @@
 			#define COMPLEX_MASK (asOBJ_APP_CLASS_DESTRUCTOR | asOBJ_APP_CLASS_COPY_CONSTRUCTOR)
 			#undef COMPLEX_RETURN_MASK
 			#define COMPLEX_RETURN_MASK (asOBJ_APP_CLASS_DESTRUCTOR | asOBJ_APP_CLASS_COPY_CONSTRUCTOR)
-			
+
 			// STDCALL is not available on ARM
 			#undef STDCALL
 			#define STDCALL
@@ -635,7 +635,7 @@
 			#define AS_MAX_PORTABILITY
 		#endif
 		#define AS_POSIX_THREADS
- 
+
 	// Windows
 	#elif defined(WIN32) || defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 		// On Windows the simple classes are returned in the EAX:EDX registers
@@ -811,6 +811,8 @@
 
 			#undef COMPLEX_MASK
 			#define COMPLEX_MASK (asOBJ_APP_CLASS_DESTRUCTOR | asOBJ_APP_CLASS_COPY_CONSTRUCTOR)
+			#undef COMPLEX_RETURN_MASK
+			#define COMPLEX_RETURN_MASK (asOBJ_APP_CLASS_DESTRUCTOR | asOBJ_APP_CLASS_COPY_CONSTRUCTOR)
 
 			#define AS_ARM
 			#define AS_CALLEE_DESTROY_OBJ_BY_VAL
