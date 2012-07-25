@@ -1,7 +1,7 @@
 #ifndef AS_GEN_WRAPPER_H
 #define AS_GEN_WRAPPER_H
 
-#ifndef ANGELSCRIPT_H 
+#ifndef ANGELSCRIPT_H
 // Avoid having to inform include path if header is already include before
 #include <angelscript.h>
 #endif
@@ -554,7 +554,9 @@ Id<T> id(T fn_ptr) { return Id<T>(); }
 // On Android it is necessary to use the template keyword as disambiguator
 // but on GNUC for example it is prohibited. On MSVC it works either way.
 // We need to write compiler specific code here.
-#if defined(ANDROID)
+// quarnster: This comment is a bit confusing, for which Android target
+//            is GNUC not used?
+#if defined(ANDROID) && !defined(__GNUC__)
 #define TMPL template
 #else
 #define TMPL

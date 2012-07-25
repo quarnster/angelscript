@@ -2,8 +2,8 @@
 #include "gameobj.h"
 #include "scriptmgr.h"
 #include <string.h>  // strcpy
-#include <stdio.h>   // rand
 #include <iostream>  // cout
+#include <stdlib.h>  // rand
 
 using namespace std;
 
