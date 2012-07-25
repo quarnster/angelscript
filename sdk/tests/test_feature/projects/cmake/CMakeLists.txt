@@ -163,4 +163,3 @@ add_executable(
         )
 target_link_libraries(test_feature Angelscript)
 set_target_properties(test_feature PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/../../bin)
-

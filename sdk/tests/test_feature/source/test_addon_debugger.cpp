@@ -91,14 +91,13 @@ public:
 		// test will be platform independent.
 		if( str.length() > 0 && str[0] == '{' )
 		{
-			int end = str.find('}')-1;
 			if( lastAddress == "" )
 			{
-				lastAddress = str.substr(1,end);
-				return "{XXXXXXXX"+str.substr(end+1);
+				lastAddress = str.substr(1,str.find("}", 0));
+				return "{XXXXXXXX"+str.substr(lastAddress.length());
 			}
-			else if( str.substr(1,end) == lastAddress )
-				return "{XXXXXXXX"+str.substr(end+1);
+			else if( str.substr(1,str.find("}", 0)) == lastAddress )
+				return "{XXXXXXXX"+str.substr(lastAddress.length());
 			else
 				return str;
 		}
@@ -119,14 +118,14 @@ bool Test()
  	asIScriptEngine *engine;
 	asIScriptModule *mod;
 	asIScriptContext *ctx;
-
+	
 	{
 		CMyDebugger debug;
 		engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
 		engine->SetMessageCallback(asMETHOD(COutStream,Callback), &out, asCALL_THISCALL);
 		RegisterScriptString(engine);
 
-		const char *script =
+		const char *script = 
 			"void func(int a, const int &in b, string c, const string &in d, type @e, type &f, type @&in g) \n"
 			"{ \n"
 			"} \n"
@@ -177,7 +176,7 @@ bool Test()
 		}
 
 		ctx->Release();
-
+		
 		engine->Release();
 	}
 
@@ -230,7 +229,7 @@ bool Test()
 			r = ctx->Execute();
 			if( r != asEXECUTION_SUSPENDED )
 				TEST_FAILED;
-
+			
 			// Now we should be on the line where the object will be created created
 			if( ctx->GetLineNumber() != 8 )
 				TEST_FAILED;

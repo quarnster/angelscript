@@ -45,8 +45,8 @@ void Test(double *testTime)
 
 	asIScriptContext *ctx = engine->CreateContext();
 
-	asIScriptFunction* fibI = mod->GetFunctionByDecl("int fibI(int)");
-	asIScriptFunction* fibR = mod->GetFunctionByDecl("int fibR(int)");
+	asIScriptFunction *fibI = mod->GetFunctionByDecl("int fibI(int)");
+	asIScriptFunction *fibR = mod->GetFunctionByDecl("int fibR(int)");
 
 	ctx->Prepare(fibR);
 	ctx->SetArgDWord(0, 35); // 43
@@ -74,7 +74,7 @@ void Test(double *testTime)
 
 	// Verify the result
 	int fib = ctx->GetReturnDWord();
-	if( fib != 9227465 )
+	if( fib != 9227465 ) 
 		printf("Didn't get the expected fibonacci value, got %d\n", fib);
 
 	ctx->Release();

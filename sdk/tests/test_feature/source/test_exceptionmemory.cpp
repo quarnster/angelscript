@@ -58,16 +58,16 @@ static const char *script3 =
 class CObject
 {
 public:
-	CObject()
+	CObject() 
 	{
-		val = ('C' | ('O'<<8) | ('b'<<16) | ('j'<<24));
-		mem = new int[1];
-		*mem = ('M' | ('e'<<8) | ('m'<<16) | (' '<<24));
+		val = ('C' | ('O'<<8) | ('b'<<16) | ('j'<<24)); 
+		mem = new int[1]; 
+		*mem = ('M' | ('e'<<8) | ('m'<<16) | (' '<<24)); 
 		//printf("C: %x\n", this);
 	}
-	~CObject()
+	~CObject() 
 	{
-		delete[] mem;
+		delete[] mem; 
 		//printf("D: %x\n", this);
 	}
 	int val;
@@ -209,7 +209,7 @@ bool Test()
 
  	asIScriptEngine *engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
 
-	engine->RegisterObjectType("Object", sizeof(CObject), asOBJ_VALUE | asOBJ_APP_CLASS_CD);
+	engine->RegisterObjectType("Object", sizeof(CObject), asOBJ_VALUE | asOBJ_APP_CLASS_CD);	
 	r = engine->RegisterObjectType("RefObj", sizeof(CRefObject), asOBJ_REF); assert(r >= 0);
 	if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") )
 	{
@@ -279,29 +279,18 @@ bool Test()
 		TEST_FAILED;
 	}
 
-	// An object has been initialized and passed by value to a function, but
+	// An object has been initialized and passed by value to a function, but 
 	// the function cannot be called due to the stack being full
-	engine->SetEngineProperty(asEP_MAX_STACK_SIZE, 8);
-	asIScriptContext *ctx2 = engine->CreateContext();
-	r = ExecuteString(engine, "Test3()", mod, ctx2);
+	engine->SetEngineProperty(asEP_MAX_STACK_SIZE, sizeof(void*));
+	r = ExecuteString(engine, "Test3()", mod);
 	if( r != asEXECUTION_EXCEPTION )
 	{
 		printf("%s: Failed\n", TESTNAME);
 		TEST_FAILED;
 	}
-	else
-	{
-		asIScriptFunction *func = ctx2->GetExceptionFunction();
-		if (strcmp(func->GetName(), "Test3"))
-		{
-			printf("%s: Failed\n", TESTNAME);
-			TEST_FAILED;
-		}
-	}
-	ctx2->Release();
 
-	// An object is allocated and initialized with a call to
-	// a function that returns an object by value. The function
+	// An object is allocated and initialized with a call to 
+	// a function that returns an object by value. The function 
 	// suspends the thread. The context is then aborted.
 	asIScriptContext *ctx = engine->CreateContext();
 	engine->SetEngineProperty(asEP_MAX_STACK_SIZE, 0);
@@ -314,8 +303,8 @@ bool Test()
 	ctx->Abort();
 	ctx->Release();
 
-	// An object is allocated and initialized with a call to
-	// a function that returns an object by value. The function
+	// An object is allocated and initialized with a call to 
+	// a function that returns an object by value. The function 
 	// sets a script exception.
 	r = ExecuteString(engine, "Test5()", mod);
 	if( r != asEXECUTION_EXCEPTION )
@@ -359,7 +348,7 @@ bool Test()
 	if( r != asEXECUTION_EXCEPTION )
 		TEST_FAILED;
 
-	// Exception happens after the value object has been destroyed and,
+	// Exception happens after the value object has been destroyed and, 
 	// the same position would also be used again after the exception
 	r = ExecuteString(engine, "{ Object o; } \n"
 		                      "RaiseException(); \n"
@@ -367,7 +356,7 @@ bool Test()
 	if( r != asEXECUTION_EXCEPTION )
 		TEST_FAILED;
 
-	// The code has two places where the object is destroyed, one in the if case, and
+	// The code has two places where the object is destroyed, one in the if case, and 
 	// and one at the end of the function. If the code doesn't go in to the if case,
 	// and the exception happens afterwards, the exception handler must not think the
 	// object was already destroyed.
@@ -401,7 +390,7 @@ bool Test()
 		engine->RegisterGlobalFunction("void RaiseException()", asFUNCTION(RaiseException), asCALL_CDECL);
 
 		asIScriptModule *mod = engine->GetModule("mod", asGM_ALWAYS_CREATE);
-		mod->AddScriptSection("script",
+		mod->AddScriptSection("script", 
 			"funcdef void func_t(); \n"
 			"void main() \n"
 			"{ \n"
@@ -416,7 +405,7 @@ bool Test()
 		r = ExecuteString(engine, "main()", mod);
 		if( r != asEXECUTION_EXCEPTION )
 			TEST_FAILED;
-
+		
 		engine->Release();
 	}
 
