@@ -91,6 +91,9 @@
 // for those applications that will load pre-compiled bytecode and wants to decrease
 // the size of the executable.
 
+// AS_NO_EXCEPTIONS
+// Define this if exception handling is turned off or not available on the target platform.
+
 
 //
 // Library usage
@@ -377,6 +380,12 @@
 
 // Microsoft Visual C++
 #if defined(_MSC_VER) && !defined(__MWERKS__)
+
+	#if _MSC_VER <= 1200 // MSVC6
+		// Disable the useless warnings about truncated symbol names for template instances
+		#pragma warning( disable : 4786 )
+	#endif
+
 	#ifdef _M_X64
 		#define MULTI_BASE_OFFSET(x) (*((asDWORD*)(&x)+2))
 		#define VIRTUAL_BASE_OFFSET(x) (*((asDWORD*)(&x)+4))

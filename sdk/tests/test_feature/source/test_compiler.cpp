@@ -206,6 +206,165 @@ bool Test()
 	COutStream out;
 	asIScriptModule *mod;
 
+	// Problem reported by Andrew Ackermann
+	{
+		engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
+		engine->SetMessageCallback(asMETHOD(CBufferedOutStream, Callback), &bout, asCALL_THISCALL);
+		engine->RegisterGlobalFunction("void assert(bool)", asFUNCTION(Assert), asCALL_GENERIC);
+
+		RegisterStdString(engine);
+		RegisterScriptArray(engine, true);
+
+		engine->RegisterGlobalFunction("void print(const string &in)", asFUNCTION(Print), asCALL_CDECL);
+
+		bout.buffer = "";
+
+		mod = engine->GetModule("test", asGM_ALWAYS_CREATE);
+
+		mod->AddScriptSection("test", 
+			"class Data {\n"
+			"	int x;\n"
+			"	Data() {\n"
+			"		print('create Data()\\n');\n"
+			"	}\n"
+			"	~Data() {\n"
+			"		print('delete Data()\\n');\n"
+			"	}\n"
+			"	Data& opAssign(const Data&in other) {\n"
+			"		x = other.x;\n"
+			"		return this;\n"
+			"	}\n"
+			"};\n"
+			"Data a;\n"
+			"Data b;\n"
+			"void TestCopyGlobals() {\n"
+			"	Data c;\n"
+			"	print('--a = b--\\n');\n"
+			"	a = b; //Implicitly creates and then deletes a temporary copy\n"
+			"	print('--a = c--\\n');\n"
+			"	a = c; //Does not create a temporary copy\n"
+			"	print('--end--\\n');\n"
+			"}\n" );
+
+		g_printbuf = "";
+
+		r = mod->Build();
+		if( r < 0 )
+			TEST_FAILED;
+
+		if( bout.buffer != "" )
+		{
+			printf("%s", bout.buffer.c_str());
+			TEST_FAILED;
+		}
+
+		r = ExecuteString(engine, "TestCopyGlobals()", mod);
+		if( r != asEXECUTION_FINISHED )
+			TEST_FAILED;
+
+		if( g_printbuf != "create Data()\n"
+		                  "create Data()\n"
+		                  "create Data()\n"
+		                  "--a = b--\n"
+		                  "--a = c--\n"
+		                  "--end--\n"
+		                  "delete Data()\n" )
+		{
+			printf("%s", g_printbuf.c_str());
+			TEST_FAILED;
+		}
+
+		engine->Release();
+	}
+
+	// Problem reported by Philip Bennefall
+	{
+		engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
+		engine->SetMessageCallback(asMETHOD(CBufferedOutStream, Callback), &bout, asCALL_THISCALL);
+		engine->RegisterGlobalFunction("void assert(bool)", asFUNCTION(Assert), asCALL_GENERIC);
+
+		RegisterStdString(engine);
+		RegisterScriptArray(engine, true);
+
+		bout.buffer = "";
+
+		mod = engine->GetModule("test", asGM_ALWAYS_CREATE);
+
+		mod->AddScriptSection("test", 
+			"int DATE_YEAR { get { return 2012; } } \n"
+			"void alert( string t, string v ) { assert( v == '2012' ); } \n"
+			"void main() \n"
+			"{ \n"
+			"  int[] dates(5); \n"
+			"  alert('Year', '' + DATE_YEAR);   \n"
+			"  dates[3]=DATE_YEAR; \n" // This was storing 3 in the array
+			"  alert('Assigned year', '' + dates[3]); \n"
+			"} \n" );
+
+		r = mod->Build();
+		if( r < 0 )
+			TEST_FAILED;
+
+		if( bout.buffer != "" )
+		{
+			printf("%s", bout.buffer.c_str());
+			TEST_FAILED;
+		}
+
+		r = ExecuteString(engine, "main()", mod);
+		if( r != asEXECUTION_FINISHED )
+			TEST_FAILED;
+
+		engine->Release();
+	}
+
+	// Problem reported by Philip Bennefall
+	{
+		engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
+		engine->SetMessageCallback(asMETHOD(CBufferedOutStream, Callback), &bout, asCALL_THISCALL);
+
+		RegisterStdString(engine);
+		RegisterScriptArray(engine, true);
+
+		bout.buffer = "";
+
+		mod = engine->GetModule("test", asGM_ALWAYS_CREATE);
+
+		mod->AddScriptSection("test",
+			"string[] get_list() \n"
+			"{ \n"
+			"  string[]@ null_handle; \n"
+			"  return null_handle; \n"
+			"} \n"
+			"void main() \n"
+			"{ \n"
+			"  string[] result=get_list(); \n"
+			"} \n");
+
+//		engine->SetEngineProperty(asEP_OPTIMIZE_BYTECODE, false);
+		r = mod->Build();
+		if( r < 0 )
+			TEST_FAILED;
+
+		if( bout.buffer != "" )
+		{
+			printf("%s", bout.buffer.c_str());
+			TEST_FAILED;
+		}
+
+		asIScriptContext *ctx = engine->CreateContext();
+		r = ExecuteString(engine, "main()", mod, ctx);
+		if( r != asEXECUTION_EXCEPTION )
+			TEST_FAILED;
+		if( string(ctx->GetExceptionString()) != "Null pointer access" )
+			TEST_FAILED;
+		if( string(ctx->GetExceptionFunction()->GetName()) != "get_list" )
+			TEST_FAILED;
+
+		ctx->Release();
+		engine->Release();
+	}
+
 	// Problem reported by _Vicious_
 	// http://www.gamedev.net/topic/625747-multiple-matching-signatures-to/
 	{
@@ -2049,6 +2208,8 @@ bool Test()
 		if( r < 0 )
 			TEST_FAILED;		
 
+		g_printbuf = "";
+
 		r = ExecuteString(engine, "main()", mod);
 		if( r != asEXECUTION_FINISHED )
 			TEST_FAILED;
@@ -2184,6 +2345,117 @@ bool Test()
 		}
 
 		r = ExecuteString(engine, "main()", mod);
+		if( r != asEXECUTION_FINISHED )
+			TEST_FAILED;
+
+		engine->Release();
+	}
+
+	// Test extremely long expressions
+	// Previously this was failing due to the recursiveness in the compiler
+	// Reported by Philip Bennefall
+	{
+		engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
+		bout.buffer = "";
+		engine->SetMessageCallback(asMETHOD(CBufferedOutStream, Callback), &bout, asCALL_THISCALL);
+		engine->RegisterGlobalFunction("void assert(bool)", asFUNCTION(Assert), asCALL_GENERIC);
+
+		string script;
+		script.reserve(20000);
+		script += "int a = 1; \na = ";
+		for( asUINT n = 0; n < 9500; n++ )
+			script += "a+";
+		script += "a; \nassert( a == 9501 ); \n";
+
+		r = ExecuteString(engine, script.c_str());
+		if( r != asEXECUTION_FINISHED )
+			TEST_FAILED;
+
+		engine->Release();
+	}
+
+
+	// This test caught a problem when the script code allocated a script class,
+	// which in turn used nested contexts to initialize some members. The VM
+	// hadn't updated the members with the stack pointer/program pointer before 
+	// the nested call so the memory was overwritten.
+	// Reported by Andrew Ackermann
+	{
+		engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
+		engine->SetMessageCallback(asMETHOD(COutStream, Callback), &out, asCALL_THISCALL);
+
+		engine->RegisterGlobalFunction("void assert(bool)", asFUNCTION(Assert), asCALL_GENERIC);
+
+		const char *script = 
+			"shared class Alignment { \n"
+			"  Alignment(int lt, float lp, int lx, \n"
+			" 		     int tt, float tp, int tx, \n"
+			"		     int rt, float rp, int rx, \n"
+			"		     int bt, float bp, int bx) \n"
+			"  { \n"
+			"    assert(lt == AS_Left); \n"
+			"    assert(tt == AS_Bottom); \n"
+			"    assert(rt == AS_Right); \n"
+			"    assert(bt == AS_Bottom); \n"
+			"    assert(lp == 3.14f); \n"
+			"    assert(tp == 1.43f); \n"
+			"    assert(rp == 4.13f); \n"
+			"    assert(bp == 4.34f); \n"
+			"    assert(lx == 42); \n"
+			"    assert(tx == 53); \n"
+			"    assert(rx == 64); \n"
+			"    assert(bx == 75); \n"
+			"  }\n"
+			"  AlignedPoint left; \n"
+		//	"  AlignedPoint right; \n"
+		//	"  AlignedPoint top; \n"
+		//	"  AlignedPoint bottom; \n"
+		//	"  double aspectRatio; \n"
+		//	"  double aspectHorizAlign; \n"
+		//	"  double aspectVertAlign; \n"
+			"} \n"
+			"shared class AlignedPoint { \n"
+		//	"  int type; \n"
+		//	"  float percent; \n"
+		//	"  int pixels; \n"
+		//	"  int size; \n"
+			"  \n"
+			"  AlignedPoint() { \n"
+		//	"    type = AS_Left; \n"
+		//	"    pixels = 0; \n"
+		//	"    percent = 0; \n"
+		//	"    size = 0; \n"
+			"  } \n"
+			"} \n"
+			"shared enum AlignmentSide \n"
+			"{ \n"
+			"  AS_Left, AS_Right, AS_Top = AS_Left, AS_Bottom = AS_Right \n"
+			"} \n"
+			"class Fault { \n"
+			"  Alignment @get_alignment() {return A;} \n"
+			"  void set_alignment(Alignment@ value) {@A = value;} \n"
+			"  Fault() { \n"
+			"    a = 3.14f; \n"
+			"    b = 1.43f; \n"
+			"    c = 4.13f; \n"
+			"    d = 4.34f; \n"
+			"    @alignment = Alignment( \n"
+			"                    AS_Left,   a + 0.0f, 42, \n"
+			"                    AS_Bottom, b + 0.0f, 53, \n"
+			"                    AS_Right,  c + 0.0f, 64, \n"
+			"                    AS_Bottom, d + 0.0f, 75); \n"
+			"  } \n"
+			"  Alignment @A; \n"
+			"  float a; float b; float c; float d; \n"
+			"} \n";
+			
+		asIScriptModule *mod = engine->GetModule("test", asGM_ALWAYS_CREATE);
+		mod->AddScriptSection("test", script);
+		r = mod->Build();
+		if( r < 0 )
+			TEST_FAILED;
+
+		r = ExecuteString(engine, "Fault f()", mod);
 		if( r != asEXECUTION_FINISHED )
 			TEST_FAILED;
 

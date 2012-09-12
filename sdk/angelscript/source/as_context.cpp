@@ -208,7 +208,7 @@ bool asCContext::IsNested(asUINT *nestCount) const
 		if( s && s[0] == 0 )
 		{
 			if( nestCount )
-				*nestCount++;
+				(*nestCount)++;
 			else
 				return true;
 		}
@@ -306,7 +306,7 @@ int asCContext::Prepare(int funcId)
 
 		funcId = m_initialFunction->GetId();
 	}
-	return Prepare(engine->GetFunctionById(funcId));
+	return Prepare(m_engine->GetFunctionById(funcId));
 }
 #endif
 
@@ -322,7 +322,7 @@ int asCContext::Prepare(asIScriptFunction *func)
 	if( func == 0 )
 	{
 		asCString str;
-		str.Format(TXT_FAILED_IN_FUNC_s_WITH_s, "Prepare", "null");
+		str.Format(TXT_FAILED_IN_FUNC_s_WITH_s_d, "Prepare", "null", asNO_FUNCTION);
 		m_engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
 		return asNO_FUNCTION;
 	}
@@ -330,7 +330,7 @@ int asCContext::Prepare(asIScriptFunction *func)
 	if( m_status == asEXECUTION_ACTIVE || m_status == asEXECUTION_SUSPENDED )
 	{
 		asCString str;
-		str.Format(TXT_FAILED_IN_FUNC_s, "Prepare");
+		str.Format(TXT_FAILED_IN_FUNC_s_d, "Prepare", asCONTEXT_ACTIVE);
 		m_engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
 		return asCONTEXT_ACTIVE;
 	}
@@ -1057,9 +1057,9 @@ int asCContext::Execute()
 	if( m_status != asEXECUTION_SUSPENDED && m_status != asEXECUTION_PREPARED )
 	{
 		asCString str;
-		str.Format(TXT_FAILED_IN_FUNC_s, "Execute");
+		str.Format(TXT_FAILED_IN_FUNC_s_d, "Execute", asCONTEXT_NOT_PREPARED);
 		m_engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
-		return asERROR;
+		return asCONTEXT_NOT_PREPARED;
 	}
 
 	m_status = asEXECUTION_ACTIVE;
@@ -1371,6 +1371,10 @@ int asCContext::GetLineNumber(asUINT stackLevel, int *column, const char **secti
 		asPWORD *s = m_callStack.AddressOf() + (GetCallstackSize()-stackLevel-1)*CALLSTACK_FRAME_SIZE;
 		func = (asCScriptFunction*)s[1];
 		bytePos = (asDWORD*)s[2];
+
+		// Subract 1 from the bytePos, because we want the line where 
+		// the call was made, and not the instruction after the call
+		bytePos -= 1;
 	}
 
 	asDWORD line = func->GetLineNumber(int(bytePos - func->byteCode.AddressOf()));
@@ -2362,6 +2366,12 @@ void asCContext::ExecuteNext()
 
 			if( objType->flags & asOBJ_SCRIPT_OBJECT )
 			{
+				// Need to move the values back to the context as the construction
+				// of the script object may reuse the context for nested calls.
+				m_regs.programPointer    = l_bc;
+				m_regs.stackPointer      = l_sp;
+				m_regs.stackFramePointer = l_fp;
+
 				// Pre-allocate the memory
 				asDWORD *mem = (asDWORD*)m_engine->CallAlloc(objType);
 
@@ -2371,19 +2381,14 @@ void asCContext::ExecuteNext()
 				// Call the constructor to initalize the memory
 				asCScriptFunction *f = m_engine->scriptFunctions[func];
 
-				asDWORD **a = (asDWORD**)*(asPWORD*)(l_sp + f->GetSpaceNeededForArguments());
+				asDWORD **a = (asDWORD**)*(asPWORD*)(m_regs.stackPointer + f->GetSpaceNeededForArguments());
 				if( a ) *a = mem;
 
 				// Push the object pointer on the stack
-				l_sp -= AS_PTR_SIZE;
-				*(asPWORD*)l_sp = (asPWORD)mem;
+				m_regs.stackPointer -= AS_PTR_SIZE;
+				*(asPWORD*)m_regs.stackPointer = (asPWORD)mem;
 
-				l_bc += 2+AS_PTR_SIZE;
-
-				// Need to move the values back to the context
-				m_regs.programPointer    = l_bc;
-				m_regs.stackPointer      = l_sp;
-				m_regs.stackFramePointer = l_fp;
+				m_regs.programPointer += 2+AS_PTR_SIZE;
 
 				CallScriptFunction(f);
 
@@ -2598,9 +2603,9 @@ void asCContext::ExecuteNext()
 		break;
 
 	case asBC_ClrVPtr:
-		// TODO: optimize: Is this instruction really necessary? 
-		//                 CallScriptFunction() can clear the null handles upon entry, just as is done for 
-		//                 all other object variables
+		// TODO: runtime optimize: Is this instruction really necessary? 
+		//                         CallScriptFunction() can clear the null handles upon entry, just as is done for 
+		//                         all other object variables
 		// Clear pointer variable
 		*(asPWORD*)(l_fp - asBC_SWORDARG0(l_bc)) = 0;
 		l_bc++;
@@ -4165,9 +4170,9 @@ void asCContext::CleanStackFrame()
 	// Clean object and parameters
 	int offset = 0;
 	if( m_currentFunction->objectType )
-	{
 		offset += AS_PTR_SIZE;
-	}
+	if( m_currentFunction->DoesReturnOnStack() )
+		offset += AS_PTR_SIZE;
 	for( asUINT n = 0; n < m_currentFunction->parameterTypes.GetLength(); n++ )
 	{
 		if( m_currentFunction->parameterTypes[n].IsObject() && !m_currentFunction->parameterTypes[n].IsReference() )

@@ -95,11 +95,31 @@ SOURCE=..\..\..\..\add_on\scriptarray\scriptarray.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\add_on\scriptdictionary\scriptdictionary.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\add_on\scriptstdstring\scriptstdstring.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\source\test_basic.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\source\test_big_arrays.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\source\test_complex.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\source\test_many_funcs.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\source\test_many_symbols.cpp
 # End Source File
 # Begin Source File
 
@@ -115,7 +135,15 @@ SOURCE=..\..\..\..\angelscript\include\angelscript.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\source\memory_stream.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\add_on\scriptarray\scriptarray.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\add_on\scriptdictionary\scriptdictionary.h
 # End Source File
 # Begin Source File
 

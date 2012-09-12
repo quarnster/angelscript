@@ -3,6 +3,7 @@
 //
 
 #include "utils.h"
+#include "memory_stream.h"
 #include <string>
 using std::string;
 
@@ -29,14 +30,9 @@ void Test()
 {
 	printf("---------------------------------------------\n");
 	printf("%s\n\n", TESTNAME);
-	printf("Machine 1\n");
-	printf("AngelScript 1.10.1 WIP 1: ??.?? secs\n");
-	printf("\n");
-	printf("Machine 2\n");
-	printf("AngelScript 1.10.1 WIP 1: 9.544 secs\n");
-	printf("AngelScript 1.10.1 WIP 2: .6949 secs\n");
-
-	printf("\nBuilding...\n");
+	printf("AngelScript 2.25.0 WIP 1: 14.93 secs\n");
+	printf("AngelScript 2.25.0 WIP 3: 10.47 secs (rewind optimization in parser)\n");
+	printf("AngelScript 2.25.0 WIP 9: 10.00 secs (improved bytecode optimization)\n");
 
  	asIScriptEngine *engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
 
@@ -46,14 +42,24 @@ void Test()
 	RegisterScriptArray(engine, true);
 	RegisterStdString(engine);
 
-	string script = scriptBegin;
-	for( int n = 0; n < 40000; n++ )
+	////////////////////////////////////////////
+	printf("\nGenerating...\n");
+
+	const int numLines = 40000;
+
+	string script;
+	script.reserve(strlen(scriptBegin) + numLines*(strlen(scriptMiddle)+5) + strlen(scriptEnd));
+	script += scriptBegin;
+	for( int n = 0; n < numLines; n++ )
 	{
 		char buf[500];
 		sprintf(buf, scriptMiddle, n);
 		script += buf;
 	}
 	script += scriptEnd;
+
+	////////////////////////////////////////////
+	printf("\nBuilding...\n");
 
 	double time = GetSystemTimer();
 
@@ -67,6 +73,29 @@ void Test()
 		printf("Build failed\n", TESTNAME);
 	else
 		printf("Time = %f secs\n", time);
+
+	////////////////////////////////////////////
+	printf("\nSaving...\n");
+
+	time = GetSystemTimer();
+
+	CBytecodeStream stream("");
+	mod->SaveByteCode(&stream);
+
+	time = GetSystemTimer() - time;
+	printf("Time = %f secs\n", time);
+	printf("Size = %d\n", int(stream.buffer.size()));
+
+	////////////////////////////////////////////
+	printf("\nLoading...\n");
+
+	time = GetSystemTimer();
+
+	asIScriptModule *mod2 = engine->GetModule(0, asGM_ALWAYS_CREATE);
+	mod2->LoadByteCode(&stream);
+
+	time = GetSystemTimer() - time;
+	printf("Time = %f secs\n", time);
 
 	engine->Release();
 }

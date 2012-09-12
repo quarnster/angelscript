@@ -68,13 +68,6 @@ struct sBindInfo;
 
 // TODO: Should allow enumerating modules, in case they have not been named.
 
-struct asSNameSpace
-{
-	asCString name;
-
-	// TODO: namespace: A namespace should have access masks. The application should be 
-	//                  able to restrict specific namespaces from access to specific modules
-};
 
 class asCScriptEngine : public asIScriptEngine
 {
@@ -149,6 +142,7 @@ public:
 	virtual asIScriptFunction *GetFuncdefByIndex(asUINT index) const;
 
 	// Typedefs
+	// TODO: interface: Should perhaps rename this to Alias, since it doesn't really create a new type
 	virtual int         RegisterTypedef(const char *type, const char *decl);
 	virtual asUINT      GetTypedefCount() const;
 	virtual const char *GetTypedefByIndex(asUINT index, int *typeId, const char **nameSpace, const char **configGroup = 0, asDWORD *accessMask = 0) const;
@@ -333,13 +327,13 @@ public:
 	asCObjectType    globalPropertyBehaviours;
 
 	// Registered interface
-	asCArray<asCObjectType *>      registeredObjTypes;
-	asCArray<asCObjectType *>      registeredTypeDefs;
-	asCArray<asCObjectType *>      registeredEnums;
-	asCArray<asCGlobalProperty *>  registeredGlobalProps;
-	asCArray<asCScriptFunction *>  registeredGlobalFuncs;
-	asCArray<asCScriptFunction *>  registeredFuncDefs;
-	asCScriptFunction             *stringFactory;
+	asCArray<asCObjectType *>          registeredObjTypes;
+	asCArray<asCObjectType *>          registeredTypeDefs;
+	asCArray<asCObjectType *>          registeredEnums;
+	asCSymbolTable<asCGlobalProperty>  registeredGlobalProps;
+	asCArray<asCScriptFunction *>      registeredGlobalFuncs;
+	asCArray<asCScriptFunction *>      registeredFuncDefs;
+	asCScriptFunction                 *stringFactory;
 	bool configFailed;
 
 	// Stores all known object types, both application registered, and script declared
@@ -352,6 +346,11 @@ public:
 	// Stores all global properties, both those registered by application, and those declared by scripts.
 	// The id of a global property is the index in this array.
 	asCArray<asCGlobalProperty *> globalProperties;
+
+	// This map is used to quickly find a property by its memory address
+	// It is used principally during building, cleanup, and garbage detection for script functions
+	asCMap<void*, asCGlobalProperty*> varAddressMap;
+
 	asCArray<int>                 freeGlobalPropertyIds;
 
 	// Stores all functions, i.e. registered functions, script functions, class methods, behaviours, etc.

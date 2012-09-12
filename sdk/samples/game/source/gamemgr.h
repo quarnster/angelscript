@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <string>
 
 class CGameObj;
 

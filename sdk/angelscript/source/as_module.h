@@ -40,6 +40,7 @@
 #define AS_MODULE_H
 
 #include "as_config.h"
+#include "as_symboltable.h"
 #include "as_atomic.h"
 #include "as_string.h"
 #include "as_array.h"
@@ -71,6 +72,7 @@ struct sObjectTypePair
 	asCObjectType *a;
 	asCObjectType *b;
 };
+
 
 // TODO: import: Remove function imports. When I have implemented function 
 //               pointers the function imports should be deprecated.
@@ -161,8 +163,8 @@ public:
 	virtual int         UnbindAllImportedFunctions();
 
 	// Bytecode Saving/Loading
-	virtual int SaveByteCode(asIBinaryStream *out) const;
-	virtual int LoadByteCode(asIBinaryStream *in);
+	virtual int SaveByteCode(asIBinaryStream *out, bool stripDebugInfo) const;
+	virtual int LoadByteCode(asIBinaryStream *in, bool *wasDebugInfoStripped);
 
 	// User data
 	virtual void *SetUserData(void *data);
@@ -211,15 +213,15 @@ public:
 	asSNameSpace    *defaultNamespace;
 
 	// This array holds all functions, class members, factories, etc that were compiled with the module
-	asCArray<asCScriptFunction *>  scriptFunctions;
+	asCArray<asCScriptFunction *>     scriptFunctions;
 	// This array holds global functions declared in the module
-	asCArray<asCScriptFunction *>  globalFunctions;
+	asCSymbolTable<asCScriptFunction> globalFunctions;
 	// This array holds imported functions in the module
-	asCArray<sBindInfo *>          bindInformations;
+	asCArray<sBindInfo *>             bindInformations;
 
 	// This array holds the global variables declared in the script
-	asCArray<asCGlobalProperty *>  scriptGlobals;
-	bool                           isGlobalVarInitialized;
+	asCSymbolTable<asCGlobalProperty> scriptGlobals;
+	bool                              isGlobalVarInitialized;
 
 	// This array holds class and interface types
 	asCArray<asCObjectType*>       classTypes;

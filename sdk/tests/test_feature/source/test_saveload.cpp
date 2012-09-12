@@ -318,7 +318,7 @@ public:
 	void AddRef() {refCount++;}
 	void Release() {if( --refCount == 0 ) delete this;}
 	static Tmpl *TmplFactory(asIObjectType*) {return new Tmpl;}
-	static bool TmplCallback(asIObjectType *ot) {return false;}
+	static bool TmplCallback(asIObjectType *ot, bool &dontGC) {return false;}
 	int refCount;
 };
 
@@ -389,25 +389,31 @@ bool Test()
 
 		// Save the compiled byte code
 		CBytecodeStream stream(__FILE__"1");
+		CBytecodeStream stream2(__FILE__"2");
 		mod = engine->GetModule(0);
 		mod->SaveByteCode(&stream);
+		mod->SaveByteCode(&stream2, true);
 
-		if( stream.buffer.size() != 1756 )
-		{
+#ifndef STREAM_TO_FILE
+		if( stream.buffer.size() != 1757 )
 			printf("The saved byte code is not of the expected size. It is %d bytes\n", stream.buffer.size());
-		}
 		asUINT zeroes = stream.CountZeroes();
-		if( zeroes != 527 ) 
+		if( zeroes != 528 ) 
 		{
 			printf("The saved byte code contains a different amount of zeroes than the expected. Counted %d\n", zeroes);
 			// Mac OS X PPC has more zeroes, probably due to the bool type being 4 bytes
 		}
 		asDWORD crc32 = ComputeCRC32(&stream.buffer[0], stream.buffer.size());
-		if( crc32 != 0x8E92EBF0 )
-		{
+		if( crc32 != 0xA398B111 )
 			printf("The saved byte code has different checksum than the expected. Got 0x%X\n", crc32);
-		}
 
+		// Without debug info
+		if( stream2.buffer.size() != 1449 )
+			printf("The saved byte code without debug info is not of the expected size. It is %d bytes\n", stream2.buffer.size());
+		zeroes = stream.CountZeroes();
+		if( zeroes != 528 )
+			printf("The saved byte code without debug info contains a different amount of zeroes than the expected. Counted %d\n", zeroes);
+#endif
 		// Test loading without releasing the engine first
 		mod->LoadByteCode(&stream);
 
@@ -430,9 +436,9 @@ bool Test()
 		engine->Release();
 		engine = ConfigureEngine(1);
 
-		stream.Restart();
+		stream2.Restart();
 		mod = engine->GetModule(0, asGM_ALWAYS_CREATE);
-		mod->LoadByteCode(&stream);
+		mod->LoadByteCode(&stream2);
 
 		if( mod->GetFunctionCount() != 6 )
 			TEST_FAILED;
@@ -454,15 +460,16 @@ bool Test()
 
 		//---------------------------------------
 		// A tiny file for comparison
+#ifndef STREAM_TO_FILE
 		engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
 		mod = engine->GetModule(0, asGM_ALWAYS_CREATE);
 		mod->AddScriptSection("script", "void f() {}");
 		mod->Build();
 		CBytecodeStream streamTiny(__FILE__"tiny");
-		mod->SaveByteCode(&streamTiny);
+		mod->SaveByteCode(&streamTiny, true);
 		engine->Release();
 
-		asBYTE expected[] = {0x00,0x00,0x00,0x00,0x00,0x01,0x66,0x6E,0x01,0x66,0x40,0x4E,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x02,0x3F,0x0A,0x00,0x00,0x00,0x00,0x02,0x00,0x70,0xC0,0x00,0x01,0x00,0x00,0x6E,0x06,0x73,0x63,0x72,0x69,0x70,0x74,0x01,0x72,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+		asBYTE expected[] = {0x01,0x00,0x00,0x00,0x00,0x00,0x01,0x66,0x6E,0x01,0x66,0x40,0x4E,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x02,0x3F,0x0A,0x00,0x00,0x00,0x00,0x00,0x01,0x72,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 		bool match = true;
 		for( asUINT n = 0; n < streamTiny.buffer.size(); n++ )
 			if( streamTiny.buffer[n] != expected[n] )
@@ -482,6 +489,7 @@ bool Test()
 				printf("%0.2X", expected[m]);
 			printf("\n");
 		}
+#endif
 	}
 
 	//-----------------------------------------
@@ -1213,7 +1221,7 @@ bool Test()
 		r = engine->RegisterObjectBehaviour("tmpl<T>", asBEHAVE_FACTORY, "tmpl<T>@ f(int&in)", asFUNCTIONPR(Tmpl::TmplFactory, (asIObjectType*), Tmpl*), asCALL_CDECL); assert( r >= 0 );
 		r = engine->RegisterObjectBehaviour("tmpl<T>", asBEHAVE_ADDREF, "void f()", asMETHOD(Tmpl,AddRef), asCALL_THISCALL); assert( r >= 0 );
 		r = engine->RegisterObjectBehaviour("tmpl<T>", asBEHAVE_RELEASE, "void f()", asMETHOD(Tmpl,Release), asCALL_THISCALL); assert( r >= 0 );
-		r = engine->RegisterObjectBehaviour("tmpl<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in)", asFUNCTION(Tmpl::TmplCallback), asCALL_CDECL); assert( r >= 0 );
+		r = engine->RegisterObjectBehaviour("tmpl<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION(Tmpl::TmplCallback), asCALL_CDECL); assert( r >= 0 );
 
 		mod = engine->GetModule("1", asGM_ALWAYS_CREATE);
 		bout.buffer = "";
@@ -1344,6 +1352,57 @@ bool Test()
 			TEST_FAILED;
 
 		ctx->Release();
+		engine->Release();
+	}
+
+	// Test problem on 64bit
+	// http://www.gamedev.net/topic/628452-linux-x86-64-not-loading-or-saving-bytecode-correctly/
+	{
+		asIScriptEngine* engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
+		engine->SetMessageCallback(asMETHOD(COutStream, Callback), &out, asCALL_THISCALL);
+		engine->RegisterGlobalFunction("void assert( bool )", asFUNCTION(Assert), asCALL_GENERIC);
+
+		asIScriptModule *mod = engine->GetModule("test", asGM_ALWAYS_CREATE);
+		mod->AddScriptSection("test", 
+			"enum TestEnum \n"
+			"{ \n"
+			"  TestEnum_A = 42 \n"
+			"} \n"
+			"class NonPrimitive \n"
+			"{ \n"
+			"  int val; \n"
+			"} \n"
+			"void Foo( int a, TestEnum e, NonPrimitive o ) \n"
+			"{ \n"
+			"  assert( a == 1 ); \n"
+			"  assert( e == TestEnum_A ); \n"
+			"  assert( o.val == 513 ); \n"
+			"} \n"
+			"void main() \n"
+			"{ \n"
+			"  NonPrimitive o; \n"
+			"  o.val = 513; \n"
+			"  Foo( 1, TestEnum_A, o ); \n"
+			"} \n");
+
+		int r = mod->Build();
+		if( r < 0 )
+			TEST_FAILED;
+
+		CBytecodeStream stream(__FILE__"1");
+		r = mod->SaveByteCode(&stream);
+		if( r < 0 )
+			TEST_FAILED;
+
+		asIScriptModule *mod2 = engine->GetModule("mod2", asGM_ALWAYS_CREATE);
+		r = mod2->LoadByteCode(&stream);
+		if( r < 0 )
+			TEST_FAILED;
+
+		r = ExecuteString(engine, "main()", mod2);
+		if( r != asEXECUTION_FINISHED )
+			TEST_FAILED;
+
 		engine->Release();
 	}
 

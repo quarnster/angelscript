@@ -97,6 +97,11 @@ void CScriptHandle::Set(void *ref, asIObjectType *type)
 	AddRefHandle();
 }
 
+asIObjectType *CScriptHandle::GetType()
+{
+	return m_type;
+}
+
 // This method shouldn't be called from the application 
 // directly as it requires an active script context
 CScriptHandle &CScriptHandle::Assign(void *ref, int typeId)
@@ -187,6 +192,15 @@ void CScriptHandle::Cast(void **outRef, int typeId)
 
 	if( type == m_type )
 	{
+		// If the requested type is a script function it is 
+		// necessary to check if the functions are compatible too
+		if( m_type->GetFlags() & asOBJ_SCRIPT_FUNCTION )
+		{
+			asIScriptFunction *func = reinterpret_cast<asIScriptFunction*>(m_ref);
+			if( !func->IsCompatibleWithTypeId(typeId) )
+				return;
+		}
+
 		// Must increase the ref count as we're returning a new reference to the object
 		AddRefHandle();
 		*outRef = m_ref;

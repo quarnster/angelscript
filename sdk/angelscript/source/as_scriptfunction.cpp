@@ -102,7 +102,7 @@ void RegisterScriptFunction(asCScriptEngine *engine)
 	int r = 0;
 	UNUSED_VAR(r); // It is only used in debug mode
 	engine->functionBehaviours.engine = engine;
-	engine->functionBehaviours.flags = asOBJ_REF | asOBJ_GC;
+	engine->functionBehaviours.flags = asOBJ_REF | asOBJ_GC | asOBJ_SCRIPT_FUNCTION;
 	engine->functionBehaviours.name = "_builtin_function_";
 #ifndef AS_MAX_PORTABILITY
 	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_ADDREF, "void f()", asMETHOD(asCScriptFunction,AddRef), asCALL_THISCALL); asASSERT( r >= 0 );
@@ -155,6 +155,13 @@ asCScriptFunction::asCScriptFunction(asCScriptEngine *engine, asCModule *mod, as
 	//                         discard the function. That way the GC won't waste time
 	//                         trying to determine if the functions are garbage before
 	//                         they can actually be considered garbage.
+	//                         Should have a method called Orphan(void *owner). The module
+	//                         should call this method instead of Release() when freeing
+	//                         its reference to the object. The script function would then
+	//                         check if module that is calling Orphan is the owner, and if 
+	//                         so notify the GC. If the module that is calling method isn't
+	//                         the owner, then the script function would simply call Release 
+	//                         as normal.
 	// Notify the GC of script functions
 	if( funcType == asFUNC_SCRIPT )
 		engine->gc.AddScriptObjectToGC(this, &engine->functionBehaviours);
@@ -237,6 +244,34 @@ int asCScriptFunction::Release() const
 		asDELETE(const_cast<asCScriptFunction*>(this),asCScriptFunction);
 
 	return r;
+}
+
+// interface
+int asCScriptFunction::GetTypeId() const
+{
+	// This const cast is ok, the object won't be modified
+	asCDataType dt = asCDataType::CreateFuncDef(const_cast<asCScriptFunction*>(this));
+	return engine->GetTypeIdFromDataType(dt);
+}
+
+// interface
+bool asCScriptFunction::IsCompatibleWithTypeId(int typeId) const
+{
+	asCDataType dt = engine->GetDataTypeFromTypeId(typeId);
+
+	// Make sure the type is a function
+	asCScriptFunction *func = dt.GetFuncDef();
+	if( func == 0 )
+		return false;
+
+	if( !IsSignatureExceptNameEqual(func) )
+		return false;
+
+	// If this is a class method, then only return true if the object type is the same
+	if( objectType != func->objectType )
+		return false;
+
+	return true;
 }
 
 // interface
@@ -939,12 +974,15 @@ void *asCScriptFunction::GetUserData() const
 }
 
 // internal
+// TODO: cleanup: This method should probably be a member of the engine
 asCGlobalProperty *asCScriptFunction::GetPropertyByGlobalVarPtr(void *gvarPtr)
 {
-	for( asUINT g = 0; g < engine->globalProperties.GetLength(); g++ )
-		if( engine->globalProperties[g] && engine->globalProperties[g]->GetAddressOfValue() == gvarPtr )
-			return engine->globalProperties[g];
-
+	asSMapNode<void*, asCGlobalProperty*> *node;
+	if( engine->varAddressMap.MoveTo(&node, gvarPtr) )
+	{
+		asASSERT(gvarPtr == node->value->GetAddressOfValue());
+		return node->value;
+	}
 	return 0;
 }
 
