@@ -1,0 +1,41 @@
+{
+	"folders":
+	[
+		{
+			"path": "sdk"
+		}
+	],
+    "build_systems":
+    [
+        {
+            "name": "angelscript",
+            "cmd": ["make", "-j1"],
+            "file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
+            "working_dir": "${project_path}/sdk/angelscript/projects/cmake/build-android",
+            "variants":
+             [
+                {
+                    "name": "clean",
+                    "cmd": ["make", "clean"]
+                }
+            ]
+        }
+    ],
+    "settings":
+    {
+        //"sublimegdb_commandline": "gdb --interpreter=mi ./test_performance",
+        "sublimegdb_commandline": "${home}/android/arm-linux-androideabi-gdb -x cmd.txt --interpreter=mi ",
+        "sublimegdb_workingdir": "${project_path:tests}/test_feature/bin",
+        "sublimegdb_exec_cmd": "-exec-continue",
+        "sublimeclang_options":
+        [
+            "-I${home}/code/3rdparty/angelscript/sdk/angelscript/include/",
+            "-I${home}/code/3rdparty/angelscript/sdk/angelscript/source/",
+            "-I${home}/code/3rdparty/angelscript/sdk/angelscript/add_on/",
+            "-I${home}/code/asaot/",
+            "-I${folder:${project_path:AOTCompiler.h}}",
+            "-ferror-limit=0"
+        ]
+    }
+}
+

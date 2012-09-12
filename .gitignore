@@ -1,0 +1,4 @@
+*.orig
+*.a
+*.sublime-workspace
+sdk/angelscript/projects/cmake/build*
